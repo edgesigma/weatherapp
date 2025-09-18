@@ -1,0 +1,14 @@
+/var/www/weatherapp/milestone_one/obj/Debug/net9.0/milestone_one.GeneratedMSBuildEditorConfig.editorconfig
+/var/www/weatherapp/milestone_one/obj/Debug/net9.0/milestone_one.AssemblyInfoInputs.cache
+/var/www/weatherapp/milestone_one/obj/Debug/net9.0/milestone_one.AssemblyInfo.cs
+/var/www/weatherapp/milestone_one/obj/Debug/net9.0/milestone_one.csproj.CoreCompileInputs.cache
+/var/www/weatherapp/milestone_one/bin/Debug/net9.0/milestone_one
+/var/www/weatherapp/milestone_one/bin/Debug/net9.0/milestone_one.deps.json
+/var/www/weatherapp/milestone_one/bin/Debug/net9.0/milestone_one.runtimeconfig.json
+/var/www/weatherapp/milestone_one/bin/Debug/net9.0/milestone_one.dll
+/var/www/weatherapp/milestone_one/bin/Debug/net9.0/milestone_one.pdb
+/var/www/weatherapp/milestone_one/obj/Debug/net9.0/milestone_one.dll
+/var/www/weatherapp/milestone_one/obj/Debug/net9.0/refint/milestone_one.dll
+/var/www/weatherapp/milestone_one/obj/Debug/net9.0/milestone_one.pdb
+/var/www/weatherapp/milestone_one/obj/Debug/net9.0/milestone_one.genruntimeconfig.cache
+/var/www/weatherapp/milestone_one/obj/Debug/net9.0/ref/milestone_one.dll
