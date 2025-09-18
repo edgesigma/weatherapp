@@ -8,6 +8,7 @@ public class HttpRequestDemo
     private static string userAddress = null;
     private static string[] geoResults = null;
     private static string LatLong = null;
+    private static GeocodeResponse responseData = null;
 
     private static void SetAddress() // prompt user for address
     {
@@ -39,9 +40,31 @@ public class HttpRequestDemo
 
     }
 
-    private static string SelectAddress() // offer user a list of options to choose
+    private static void SelectAddress() // offer user a list of options to choose
     {
-        return "address";
+        Dictionary<string, string>[] arrayOfMatches = new Dictionary<string, string>[responseData.result.addressMatches.Count];
+        for (int i = 0; i < arrayOfMatches.Length; i++)
+        {
+            arrayOfMatches[i] = new Dictionary<string, string>();
+        }
+
+
+        int ctr = 0;
+
+        Console.WriteLine("Your search matched multiple addresses. Please select one.");
+
+        foreach (LocationMatch match in responseData.result.addressMatches)
+        {
+            arrayOfMatches[ctr++].Add(match.matchedAddress, $"{match.coordinates.x},{match.coordinates.y}");
+            Console.WriteLine($"{ctr}. " + match.matchedAddress);
+        }
+
+        int selection = int.Parse(Console.ReadLine());
+        selection-=1;
+
+        LatLong = arrayOfMatches[selection].Values.ElementAt(0);
+        Console.WriteLine("lat/long: " + LatLong);
+
     }
 
     private static async void FetchForecastData(string Location)
@@ -87,19 +110,36 @@ public class HttpRequestDemo
         // use provided address to fetch location data
         string results = await FetchLocationData(userAddress);
 
-        Console.WriteLine(results);
+        // Console.WriteLine(results);
 
-        GeocodeResponse responseData = JsonSerializer.Deserialize<GeocodeResponse>(results);
-
-        if (responseData.result.addressMatches != null)
+        responseData = JsonSerializer.Deserialize<GeocodeResponse>(results);
+        if (responseData.result.addressMatches.Count > 1)
         {
-            Console.WriteLine("we have matches!");
+            SelectAddress();
         }
         else
         {
-            Console.WriteLine("no matches");
-        }
+            Dictionary<string, string>[] arrayOfMatches = new Dictionary<string, string>[responseData.result.addressMatches.Count];
+            for (int i = 0; i < arrayOfMatches.Length; i++)
+            {
+                arrayOfMatches[i] = new Dictionary<string, string>();
+            }
 
+            Console.WriteLine("only one match.");
+            // LatLong = $"{responseData.result.addressMatches[0].coordinates.x},{responseData.result.addressMatches[0].coordinates.y}";
+
+            int ctr = 0;
+
+            foreach (LocationMatch match in responseData.result.addressMatches)
+            {
+                Console.WriteLine(LocationMatch.ToString());
+                arrayOfMatches[ctr].Add(match.matchedAddress, $"{match.coordinates.x},{match.coordinates.y}");
+            }
+
+        LatLong = arrayOfMatches[0].Values.ElementAt(0);
+        Console.WriteLine("lat/long: " + LatLong);
+
+        }
     }
 
     public class Coordinates
