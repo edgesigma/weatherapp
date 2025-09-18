@@ -6,7 +6,7 @@ using System.Collections.Generic;
 public class HttpRequestDemo
 {
     private static string userAddress = null;
-    private static string[] geoResults = null;
+    private static string geoResults = null;
     private static string LatLong = null;
     private static GeocodeResponse responseData = null;
 
@@ -55,7 +55,7 @@ public class HttpRequestDemo
 
         foreach (LocationMatch match in responseData.result.addressMatches)
         {
-            arrayOfMatches[ctr++].Add(match.matchedAddress, $"{match.coordinates.x},{match.coordinates.y}");
+            arrayOfMatches[ctr++].Add(match.matchedAddress, $"{match.coordinates.y},{match.coordinates.x}");
             Console.WriteLine($"{ctr}. " + match.matchedAddress);
         }
 
@@ -67,17 +67,21 @@ public class HttpRequestDemo
 
     }
 
-    private static async void FetchForecastData(string Location)
+    private static async Task FetchForecastData(string Location)
     {
+        Console.WriteLine("now, fetch weather data...");
+
         // Create an instance of HttpClient
         using HttpClient client = new();
 
         try
         {
             // Define the URI for the GET request
-            // string uri = "https://api.weather.gov/points/39.7456,-97.0892";
             string uri = $"https://api.weather.gov/points/{Location}";
 
+            Console.WriteLine(uri);
+
+            client.Timeout = TimeSpan.FromSeconds(10);
             client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36");
 
             // Send the GET request and get the response
@@ -91,10 +95,19 @@ public class HttpRequestDemo
 
             // Print the response body
             Console.WriteLine(responseBody);
+
+            // debug statements
+            Console.WriteLine($"response headers: {response.Headers}");
+            Console.WriteLine($"response headers: {response.StatusCode}");
+            // Console.WriteLine($"response headers: {response.Headers}");
         }
         catch (HttpRequestException e)
         {
             Console.WriteLine($"Request error: {e.Message}");
+        }
+        catch (TaskCanceledException e)
+        {
+            Console.WriteLine("weather forecast request timed out!");
         }
         catch (Exception e)
         {
@@ -104,42 +117,50 @@ public class HttpRequestDemo
 
     public static async Task Main(string[] args)
     {
-        // prompt user for address
-        SetAddress();
-
-        // use provided address to fetch location data
-        string results = await FetchLocationData(userAddress);
-
-        // Console.WriteLine(results);
-
-        responseData = JsonSerializer.Deserialize<GeocodeResponse>(results);
-        if (responseData.result.addressMatches.Count > 1)
+        while (LatLong == null)
         {
-            SelectAddress();
-        }
-        else
-        {
-            Dictionary<string, string>[] arrayOfMatches = new Dictionary<string, string>[responseData.result.addressMatches.Count];
-            for (int i = 0; i < arrayOfMatches.Length; i++)
+            // prompt user for address
+            SetAddress();
+
+            // fetch geolocation data with user-supplied address
+            string results = await FetchLocationData(userAddress);
+
+            // debug statement
+            Console.WriteLine(results);
+
+            // deserialize the JSON response
+            responseData = JsonSerializer.Deserialize<GeocodeResponse>(results);
+
+            if (responseData.result.addressMatches.Count > 1)
             {
-                arrayOfMatches[i] = new Dictionary<string, string>();
+                SelectAddress(); // rename disambiguateAddress
             }
-
-            Console.WriteLine("only one match.");
-            // LatLong = $"{responseData.result.addressMatches[0].coordinates.x},{responseData.result.addressMatches[0].coordinates.y}";
-
-            int ctr = 0;
-
-            foreach (LocationMatch match in responseData.result.addressMatches)
+            else
             {
-                Console.WriteLine(LocationMatch.ToString());
-                arrayOfMatches[ctr].Add(match.matchedAddress, $"{match.coordinates.x},{match.coordinates.y}");
+                Dictionary<string, string>[] arrayOfMatches = new Dictionary<string, string>[responseData.result.addressMatches.Count];
+                Console.WriteLine("check single array length: " + responseData.result.addressMatches.Count);
+                for (int i = 0; i < arrayOfMatches.Length; i++)
+                {
+                    arrayOfMatches[i] = new Dictionary<string, string>();
+                }
+
+                Console.WriteLine("only one match.");
+
+                int ctr = 0;
+
+                foreach (LocationMatch match in responseData.result.addressMatches)
+                {
+                    // Console.WriteLine(LocationMatch.ToString());
+                    arrayOfMatches[ctr].Add(match.matchedAddress, $"{match.coordinates.y},{match.coordinates.x}");
+                }
+
+                LatLong = arrayOfMatches[0].Values.ElementAt(0);
+                Console.WriteLine("lat/long: " + LatLong);
+
             }
-
-        LatLong = arrayOfMatches[0].Values.ElementAt(0);
-        Console.WriteLine("lat/long: " + LatLong);
-
         }
+
+        await FetchForecastData(LatLong);
     }
 
     public class Coordinates

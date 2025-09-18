@@ -7,13 +7,23 @@ send GET request to hard-coded national weather svc. API
 print JSON response to the console
 
 ### milestone two
-prompt user for address
-send GET request to geocoding API
-    geocoding API can return multiple matches
-parse options and present to user
-collect choice from user
+
+while LatLong = null
+    setAddress() //prompts user
+    make Get request to geolocation API
+
+    if..
+        user submitted address returns a single result
+            storeLatLong() // populates LatLong with a string
+        user submitted address returns multiple results
+            disambiguateResults()
+            storeLatLong() // populates LatLong with a string
+
+
 make subsequent GET request to the national weather svc. API
 print JSON response to the console
 
 ## milestone three
+refactor to OOP
+add unit testing
 design custom API endpoints to support frontend
