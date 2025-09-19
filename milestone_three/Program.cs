@@ -29,6 +29,7 @@ if (app.Environment.IsDevelopment())
 
 // serve static files
 app.UseDefaultFiles();
+app.UseStaticFiles();       
 
 app.MapPost("/address/submit", async (AddressRequest request) =>
 {

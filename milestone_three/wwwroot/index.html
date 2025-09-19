@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Forecast App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        input[type="text"] {
+            padding: 10px;
+            width: 300px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .address-match {
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .address-match:hover {
+            background-color: #e9ecef;
+        }
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .forecast-card {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Weather Forecast App</h1>
+        
+        <!-- Address Input Form -->
+        <form id="addressForm">
+            <input 
+                type="text" 
+                id="addressInput" 
+                placeholder="Enter an address (e.g., 123 Main St, City, State)" 
+                required
+            />
+            <button type="submit" id="submitBtn">Get Weather</button>
+        </form>
+
+        <!-- Loading/Error Messages -->
+        <div id="messageContainer"></div>
+
+        <!-- Address Matches -->
+        <div id="addressMatches" style="display: none;">
+            <h3>Select your address:</h3>
+            <div id="matchesList"></div>
+        </div>
+
+        <!-- Weather Forecast -->
+        <div id="forecastContainer" style="display: none;">
+            <h3>7-Day Forecast:</h3>
+            <div id="forecastGrid" class="forecast-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        const addressForm = document.getElementById('addressForm');
+        const addressInput = document.getElementById('addressInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const messageContainer = document.getElementById('messageContainer');
+        const addressMatches = document.getElementById('addressMatches');
+        const matchesList = document.getElementById('matchesList');
+        const forecastContainer = document.getElementById('forecastContainer');
+        const forecastGrid = document.getElementById('forecastGrid');
+
+        // Handle address form submission
+        addressForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const address = addressInput.value.trim();
+            
+            if (!address) return;
+
+            showLoading('Searching for addresses...');
+            hideElements();
+
+            try {
+                const response = await fetch('/address/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ address: address })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const matches = await response.json();
+                clearMessages();
+                
+                if (matches.length === 0) {
+                    showError('No addresses found. Please try a different search.');
+                } else if (matches.length === 1) {
+                    // Automatically select if only one match
+                    selectAddress(matches[0]);
+                } else {
+                    // Show multiple matches for user to choose
+                    displayAddressMatches(matches);
+                }
+
+            } catch (error) {
+                showError(`Error searching for addresses: ${error.message}`);
+                console.error('Error:', error);
+            }
+        });
+
+        // Display multiple address matches
+        function displayAddressMatches(matches) {
+            matchesList.innerHTML = '';
+            
+            matches.forEach((match, index) => {
+                const matchDiv = document.createElement('div');
+                matchDiv.className = 'address-match';
+                matchDiv.textContent = match.matchedAddress;
+                matchDiv.onclick = () => selectAddress(match);
+                matchesList.appendChild(matchDiv);
+            });
+
+            addressMatches.style.display = 'block';
+        }
+
+        // Handle address selection
+        async function selectAddress(match) {
+            const latLong = `${match.coordinates.y},${match.coordinates.x}`;
+            
+            showLoading('Loading weather forecast...');
+            hideElements();
+
+            try {
+                const response = await fetch('/address/select', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        address: match.matchedAddress,
+                        latLong: latLong
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const forecast = await response.json();
+                clearMessages();
+                displayForecast(forecast);
+
+            } catch (error) {
+                showError(`Error loading weather forecast: ${error.message}`);
+                console.error('Error:', error);
+            }
+        }
+
+        // Display weather forecast
+        function displayForecast(forecast) {
+            forecastGrid.innerHTML = '';
+            
+            forecast.forEach(period => {
+                const card = document.createElement('div');
+                card.className = 'forecast-card';
+                card.innerHTML = `
+                    <h4>${period.name}</h4>
+                    <p><strong>Temperature:</strong> ${period.temperature}°${period.temperatureUnit}</p>
+                    <p><strong>Wind:</strong> ${period.windSpeed} ${period.windDirection}</p>
+                    <p><strong>Forecast:</strong> ${period.shortForecast}</p>
+                `;
+                forecastGrid.appendChild(card);
+            });
+
+            forecastContainer.style.display = 'block';
+        }
+
+        // Utility functions
+        function showLoading(message) {
+            messageContainer.innerHTML = `<div class="loading">${message}</div>`;
+            submitBtn.disabled = true;
+        }
+
+        function showError(message) {
+            messageContainer.innerHTML = `<div class="error">${message}</div>`;
+            submitBtn.disabled = false;
+        }
+
+        function clearMessages() {
+            messageContainer.innerHTML = '';
+            submitBtn.disabled = false;
+        }
+
+        function hideElements() {
+            addressMatches.style.display = 'none';
+            forecastContainer.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
