@@ -6,9 +6,12 @@ using System.Collections.Generic;
 public class HttpRequestDemo
 {
     private static string userAddress = null;
-    private static string geoResults = null;
+    // private static string geoResults = null;
     private static string LatLong = null;
     private static GeocodeResponse responseData = null;
+
+
+
 
     private static void SetAddress() // prompt user for address
     {
